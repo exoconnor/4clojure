@@ -1,108 +1,31 @@
 (ns four-clojure.core)
 
-;; From https://gist.github.com/thegeez/8352754
-;; 1. Common test utility
-(require '[clojure.walk :as walk])
-
-(defmacro to-test [name & source]
-  `(defn ~(symbol (str name "-test")) [] ~@(for [case (filter list? source)]
-                                             `(assert ~(walk/postwalk-replace {'__ name} case)))))
-
-;; 2. for each problem I write:
-;; (def pNN
-  ;; (fn ...solution here...))
-
-;; 3. type (to-test solution-fn-name  )
-;; 4. copy paste the problem test cases from 4clojure into the to-test
-;; form (the text will include "test not run")
-;; example problem 21:
-
-;; (to-test pNN
-;;          (= (__ 2 [1 2 3 4 5]) '(3 4 5 1 2))
-;;          test not run	
-;;          (= (__ -2 [1 2 3 4 5]) '(4 5 1 2 3))
-;;          test not run	
-;;          (= (__ 6 [1 2 3 4 5]) '(2 3 4 5 1))
-;;          test not run	
-;;          (= (__ 1 '(:a :b :c)) '(:b :c :a))
-;;          test not run	
-;;          (= (__ -4 '(:a :b :c)) '(:c :a :b))
-;;          )
-
-;; 5. run (pNN-test) to run all the created assertions of the test
-;; case
-;; 6. edit pNN and test again
-;; 7. (pNN-test) returns nil for succes!
-;; 8. copy the (fn ...) body from pNN into 4clojure
-
-;; #(first (reverse %)) is more idiomatic/clear and also still linear
-;; don't get fancy/verbose when it doesn't serve
-(def p19
-  (fn [coll]
-    (loop [[first & rest] coll]
-      (if (empty? rest)
-        first
-        (recur rest)))))
-
-(to-test p19
-         (= (__ [1 2 3 4 5]) 5)
-         (= (__ '(5 4 3)) 3)
-         (= (__ ["b" "c" "d"]) "d")
-         )
-
-(def p26
-  (fn [x]
-    (letfn
-        [(next-fib [[n-1 n-2]]
-           [(+ n-1 n-2) n-1])]
-      (take x (map first (iterate next-fib [1 0]))))))
-
-(to-test p26
-         (= (__ 3) '(1 1 2))
-         (= (__ 6) '(1 1 2 3 5 8))
-         (= (__ 8) '(1 1 2 3 5 8 13 21))
-         )
-
-(defn fibonacci [x]
-  (letfn
-      [(next-fib [[n-1 n-2]]
-         [(+ n-1 n-2) n-1])]
-    (take x (map first (iterate next-fib [1 0])))))
-
-(defn flatten2 [arg]
-  (letfn
-      [(flattener [node]
-         (cond
-           (sequential? node) (mapcat flattener node)
-           :else (list node)))]
-    (flattener arg))
-  )
-
 ;; Write a function which reverses the interleave process into x number of subsequences.
 (def p43
-  (fn [seq-in num-partitions]
-    (let [vector-vector (into [] (repeat num-partitions []))]
-      (map sequence (first (reduce (fn [[vec-vec counter] x]
-                (let [index (mod counter num-partitions)]
-                  [(assoc vec-vec index (conj (get vec-vec index) x)) (inc counter)]))
-              (vector vector-vector 0)
-              seq-in))))))
+  (fn [coll n]
+    (first (reduce (fn [[output counter] x]
+                     (let [index (mod counter n)]
+                       [(assoc output index (conj (get output index) x)) (inc counter)]))
+                   [(into [] (repeat n [])) 0]
+                   coll))))
+;; I did not understand the true power of apply
+(def p43-2 #(apply map list (partition %2 %1)))
 
-(def p43-1 [[1 2 3 4 5 6] 2])
-(to-test p43
-         (= (__ [1 2 3 4 5 6] 2) '((1 3 5) (2 4 6))))
-(p43 [1 2 3 4 5 6] 2)
-
+;; Write a function which can rotate a sequence in either direction.
 (def p44
   (fn [shift s]
-    (let [length (count s)
-          drop-length (if (pos? shift) shift (+ length (mod length shift)))]
-      (take length (drop drop-length (cycle s))))))
+     (let [length (count s)
+           drop-length (if (pos? shift)
+                         shift
+                         (+ length (mod shift length)))]
+       (take length (drop drop-length (cycle s))))))
+;; (concat (drop drop-length s) (take drop-length s))
+;; also works (although need to rename drop length var)
+;; I like the explicit taking of length but neither is obv.
+;; better to me
 
-(defn rotate [shift s]
-  (let [length (count s)
-        drop-length (if (pos? shift) shift (+ length (mod length shift)))]
-    (concat (drop drop-length s) (take drop-length s))))
+;; Write a higher-order function which flips the order of the arguments of an input function.
+(def p46 #(fn [& args] (apply % (reverse args))))
 
 ;; Write a function which takes a sequence consisting of items with different types and splits them up into
 ;; a set of homogeneous sub-sequences. The internal order of each sub-sequence should be maintained, but the
@@ -117,9 +40,7 @@
                  {})
          (vals))))
 ;; lol just use group-by
-(def p50-2
-  (fn [v]
-    (vals (group-by type v))))
+(def p50-2 (fn [v] (vals (group-by type v))))
 
 ;; Given a vector of integers, find the longest consecutive sub-sequence of increasing numbers.
 ;; If two sub-sequences have the same length, use the one that occurs first. An increasing
@@ -137,6 +58,7 @@
                                   {:current-subsequence [] :longest-subsequence []}
                                   v))))
 
+;; Write a function which returns a sequence of lists of x items each. Lists of less than x items should not be returned.
 (def p54
   (fn [n coll]
     (first (reduce (fn [[output next-partition] value]
@@ -146,13 +68,16 @@
                    [[] []]
                    coll))))
 
+;; Write a function which returns a map containing the number of occurences of each distinct item in a sequence.
 (def p55
   (fn [coll]
     (reduce (fn [val->freq value]
               (update val->freq value (fnil inc 0)))
             {}
             coll)))
+;; 4Clojure uses version < 1.7, in which case you have to use update-in
 
+;; Write a function which removes the duplicates from a sequence. Order of the items must be maintained.
 (def p56
   (fn [coll]
     (first (reduce (fn [[output seen :as acc] value]
@@ -161,3 +86,17 @@
                        [(conj output value) (conj seen value)]))
                    [[] #{}]
                    coll))))
+
+;; Write a function which allows you to create function compositions.
+;; The parameter list should take a variable number of functions, and create a function that applies them from right-to-left.
+(def p58
+  (fn [& funcs]
+    (let [right-to-left (reverse funcs)]
+      (fn [& args]
+        (reduce (fn [acc func] (func acc)) (apply (first right-to-left) args) (rest right-to-left))))))
+
+;; Take a set of functions and return a new function that takes a variable number of arguments and
+;; returns a sequence containing the result of applying each function left-to-right to the argument list.
+(def p59
+  (fn [& funcs]
+    (fn [& args] (map #(apply % args) funcs))))
