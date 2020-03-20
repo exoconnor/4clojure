@@ -116,3 +116,14 @@
 ;; x, (f x), (f (f x)), (f (f (f x))), etc.
 (def p62
   (fn iter [f x] (cons x (lazy-seq (iter f (f x))))))
+
+;; Given a function f and a sequence s, write a function which returns a map.
+;; The keys should be the values of f applied to each item in s.
+;; The value at each key should be a vector of corresponding items in the order they appear in s.
+(def p63
+  (fn [f xs]
+    (reduce
+     (fn [m x] (update-in m (list (f x)) #((fnil conj []) % x)))
+     {}
+     xs)))
+
