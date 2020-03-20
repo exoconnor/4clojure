@@ -150,3 +150,11 @@
         (= (first test-case) [a a]) :list
         :else :vector))))
 
+;; Given two integers, write a function which returns the greatest common divisor.
+(def p66
+  (fn [a b]
+    (let [start (int (/ (max a b) 2))
+          divisor? (fn [n d] (zero? (mod n d)))]
+      (some #(and (and (divisor? a %) (divisor? b %)) %) (range start 0 -1)))))
+;; Euclidean Algorithm is clearly better but now's not the time for a math tangent
+
