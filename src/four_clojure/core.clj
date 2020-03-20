@@ -112,3 +112,7 @@
                (cons acc (lazy-seq (reducer (rest xs) (f acc (first xs)))))))]
        (reducer xs init)))))
 
+;; Given a side-effect free function f and an initial value x write a function which returns an infinite lazy sequence of
+;; x, (f x), (f (f x)), (f (f (f x))), etc.
+(def p62
+  (fn iter [f x] (cons x (lazy-seq (iter f (f x))))))
