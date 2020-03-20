@@ -98,3 +98,17 @@
 (def p59
   (fn [& fs]
     (fn [& args] (map #(apply % args) fs))))
+
+;; Write a function which behaves like reduce, but returns each intermediate value of the reduction.
+;; Your function must accept either two or three arguments, and the return sequence must be lazy.
+(def p60
+  (fn reductions2
+    ([f xs] (reductions2 f (first xs) (rest xs)))
+    ([f init xs]
+     (let [reducer
+           (fn reducer [xs acc]
+             (if (empty? xs)
+               (cons acc nil)
+               (cons acc (lazy-seq (reducer (rest xs) (f acc (first xs)))))))]
+       (reducer xs init)))))
+
