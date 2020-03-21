@@ -158,3 +158,60 @@
       (some #(and (and (divisor? a %) (divisor? b %)) %) (range start 0 -1)))))
 ;; Euclidean Algorithm is clearly better but now's not the time for a math tangent
 
+;; for p67 - ideal form uses a priority queue not a map but I want to run
+;; this on 4clojure and none of the priority queues are in core
+(defn primes
+  "Lazy functional prime generator based on https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf"
+  ([] (let [wheel2357
+            (cycle '(2 4 2 4 6 2 6 4 2 4 6 6 2 6 4 2 6 4 6 8 4 2 4 2 4 8 6 4 6 2 4 6 2 6 6 4 2 4 6 2 6 4 2 4 2 10 2 10))
+            candidates (reductions + 11 wheel2357)]
+        (concat '(2 3 5 7) (primes candidates (sorted-map)))))
+  ([candidates composite->primes]
+   (let [c (first candidates)
+         cs (drop 1 candidates)
+         c->ps (reduce (fn [c->ps p-iter]
+                         ;; update map with next multiple of prime large than c
+                         (let [rst (drop-while #(<= % c) p-iter)]
+                           (update-in c->ps
+                                      (list (first rst))
+                                      #((fnil conj '()) % rst))))
+                       (into (sorted-map) (drop-while #(<= (first %1) c) composite->primes))
+                       (mapcat second (take-while #(<= (first %1) c) composite->primes)))]
+     (if (contains? composite->primes c)
+       (recur cs c->ps)
+       ;; c is prime, create iterator and place it at next unmarked composite c^2, seq on
+       (cons c
+             (lazy-seq (primes cs
+                               (assoc c->ps
+                                      (* c c)
+                                      (list (iterate #(+ (* 2 c) %) (* c c)))))))))))
+;; Repeat prime form for copy pasting into 4clojure
+(def p67
+  (fn [n]
+    (let [primes (fn primes
+                   ([] (let [wheel2357
+                             (cycle '(2 4 2 4 6 2 6 4 2 4 6 6 2 6 4 2 6 4 6 8 4 2 4 2 4 8 6 4 6 2 4 6 2 6 6 4 2 4 6 2 6 4 2 4 2 10 2 10))
+                             candidates (reductions + 11 wheel2357)]
+                         (concat '(2 3 5 7) (primes candidates (sorted-map)))))
+                   ([candidates composite->primes]
+                    (let [c (first candidates)
+                          cs (drop 1 candidates)
+                          c->ps (reduce (fn [c->ps p-iter]
+                                          ;; update map with next multiple of prime large than c
+                                          (let [rst (drop-while #(<= % c) p-iter)]
+                                            (update-in c->ps
+                                                       (list (first rst))
+                                                       #((fnil conj '()) % rst))))
+                                        (into (sorted-map) (drop-while #(<= (first %1) c) composite->primes))
+                                        (mapcat second (take-while #(<= (first %1) c) composite->primes)))]
+                      (if (contains? composite->primes c)
+                        (recur cs c->ps)
+                        ;; c is prime, create iterator and place it at next unmarked composite c^2, seq on
+                        (cons c
+                              (lazy-seq (primes cs
+                                                (assoc c->ps
+                                                       (* c c)
+                                                       (list (iterate #(+ (* 2 c) %) (* c c)))))))))))]
+      (take n (primes)))))
+
+
