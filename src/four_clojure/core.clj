@@ -1,4 +1,6 @@
 (ns four-clojure.core)
+(require '[taoensso.tufte :as tufte :refer (defnp p profiled profile)])
+(tufte/add-basic-println-handler! {})
 
 ;; Write a function which reverses the interleave process into x number of subsequences.
 (def p43
@@ -161,57 +163,64 @@
 ;; for p67 - ideal form uses a priority queue not a map but I want to run
 ;; this on 4clojure and none of the priority queues are in core
 (defn primes
-  "Lazy functional prime generator based on https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf"
+  "Lazy prime generator based on https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf"
   ([] (let [wheel2357
             (cycle '(2 4 2 4 6 2 6 4 2 4 6 6 2 6 4 2 6 4 6 8 4 2 4 2 4 8 6 4 6 2 4 6 2 6 6 4 2 4 6 2 6 4 2 4 2 10 2 10))
-            candidates (reductions + 11 wheel2357)]
-        (concat '(2 3 5 7) (primes candidates (sorted-map)))))
-  ([candidates composite->primes]
+            candidates (reductions + 11 wheel2357)
+            primeq (java.util.PriorityQueue. 32 (comparator (fn [a b] (< (first a) (first b)))))]
+        (concat '(2 3 5 7) (primes candidates primeq))))
+  ([candidates primeq]
    (let [c (first candidates)
          cs (drop 1 candidates)
-         c->ps (reduce (fn [c->ps p-iter]
-                         ;; update map with next multiple of prime large than c
-                         (let [rst (drop-while #(<= % c) p-iter)]
-                           (update-in c->ps
-                                      (list (first rst))
-                                      #((fnil conj '()) % rst))))
-                       (into (sorted-map) (drop-while #(<= (first %1) c) composite->primes))
-                       (mapcat second (take-while #(<= (first %1) c) composite->primes)))]
-     (if (contains? composite->primes c)
-       (recur cs c->ps)
+         ;; Update primeq via java mutation while determining if c is prime
+         c-prime? (reduce (fn [p? p-iter]
+                            (.add primeq (drop-while #(<= % c) p-iter))
+                            (and p? (not= (first p-iter) c)))
+                          true
+                          (take-while #(and % (<= (first %) c))
+                                      (repeatedly (fn []
+                                                    (let [p (.peek primeq)]
+                                                      (cond
+                                                        (nil? p) nil
+                                                        (< c (first p)) nil
+                                                        :else (.poll primeq)))))))]
+     (if c-prime?
        ;; c is prime, create iterator and place it at next unmarked composite c^2, seq on
-       (cons c
-             (lazy-seq (primes cs
-                               (assoc c->ps
-                                      (* c c)
-                                      (list (iterate #(+ (* 2 c) %) (* c c)))))))))))
+       (do
+         (.add primeq (iterate #(+ % (* 2 c)) (* c c)))
+         (cons c (lazy-seq (primes cs primeq))))
+       (recur cs primeq)))))
+
 ;; Repeat prime form for copy pasting into 4clojure
 (def p67
   (fn [n]
     (let [primes (fn primes
                    ([] (let [wheel2357
                              (cycle '(2 4 2 4 6 2 6 4 2 4 6 6 2 6 4 2 6 4 6 8 4 2 4 2 4 8 6 4 6 2 4 6 2 6 6 4 2 4 6 2 6 4 2 4 2 10 2 10))
-                             candidates (reductions + 11 wheel2357)]
-                         (concat '(2 3 5 7) (primes candidates (sorted-map)))))
-                   ([candidates composite->primes]
+                             candidates (reductions + 11 wheel2357)
+                             primeq (java.util.PriorityQueue. 32 (comparator (fn [a b] (< (first a) (first b)))))]
+                         (concat '(2 3 5 7) (primes candidates primeq))))
+                   ([candidates primeq]
                     (let [c (first candidates)
                           cs (drop 1 candidates)
-                          c->ps (reduce (fn [c->ps p-iter]
-                                          ;; update map with next multiple of prime large than c
-                                          (let [rst (drop-while #(<= % c) p-iter)]
-                                            (update-in c->ps
-                                                       (list (first rst))
-                                                       #((fnil conj '()) % rst))))
-                                        (into (sorted-map) (drop-while #(<= (first %1) c) composite->primes))
-                                        (mapcat second (take-while #(<= (first %1) c) composite->primes)))]
-                      (if (contains? composite->primes c)
-                        (recur cs c->ps)
+                          ;; Update primeq via java mutation while determining if c is prime
+                          c-prime? (reduce (fn [p? p-iter]
+                                             (.add primeq (drop-while #(<= % c) p-iter))
+                                             (and p? (not= (first p-iter) c)))
+                                           true
+                                           (take-while #(and % (<= (first %) c))
+                                                       (repeatedly (fn []
+                                                                     (let [p (.peek primeq)]
+                                                                       (cond
+                                                                         (nil? p) nil
+                                                                         (< c (first p)) nil
+                                                                         :else (.poll primeq)))))))]
+                      (if c-prime?
                         ;; c is prime, create iterator and place it at next unmarked composite c^2, seq on
-                        (cons c
-                              (lazy-seq (primes cs
-                                                (assoc c->ps
-                                                       (* c c)
-                                                       (list (iterate #(+ (* 2 c) %) (* c c)))))))))))]
+                        (do
+                          (.add primeq (iterate #(+ % (* 2 c)) (* c c)))
+                          (cons c (lazy-seq (primes cs primeq))))
+                        (recur cs primeq)))))]
       (take n (primes)))))
 
 
