@@ -160,8 +160,6 @@
       (some #(and (and (divisor? a %) (divisor? b %)) %) (range start 0 -1)))))
 ;; Euclidean Algorithm is clearly better but now's not the time for a math tangent
 
-;; for p67 - ideal form uses a priority queue not a map but I want to run
-;; this on 4clojure and none of the priority queues are in core
 (defn primes
   "Lazy prime generator based on https://www.cs.hmc.edu/~oneill/papers/Sieve-JFP.pdf"
   ([] (let [wheel2357
