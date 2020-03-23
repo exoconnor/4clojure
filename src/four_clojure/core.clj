@@ -236,3 +236,48 @@
             {}
             (mapcat seq ms))))
 
+;; Write a function that splits a sentence up into a sorted list of words.
+;; Capitalization should not affect sort order and punctuation should be
+;; ignored.
+(def p70
+  (fn [s]
+    (sort-by clojure.string/lower-case
+             (re-seq #"[a-zA-Z]+" s))))
+
+;; Analyze a tictactoe board
+(def p73
+  (fn [[r1 r2 r3 :as board]]
+    (some (fn [[a b c]]
+            (when (and (= a b c) (not= a :e)) a))
+          (concat board
+                  (map vector r1 r2 r3)
+                  (list (map-indexed #(nth %2 %1) board))
+                  (list (map-indexed #(nth %2 %1) (reverse board)))))))
+
+;; Given a string of comma separated integers, write a function which returns a
+;; new comma separated string that only contains the numbers which are perfect
+;; squares.
+(def p74
+  (fn [s]
+    (->> s
+         (re-seq #"\d+")
+         (filter (fn [digit-string]
+                   (let [n (Integer/parseInt digit-string)
+                         root (int (Math/sqrt n))]
+                     (= n (* root root)))))
+         (clojure.string/join ","))))
+
+;; Euler's Totient Function
+(def p75
+  (fn euler-totient [x]
+    (let [gcd (fn gcd [a b]
+                (if (zero? b)
+                  (Math/abs a)
+                  (recur b (rem a b))))]
+      (reduce (fn [count a]
+                (if (= 1 (gcd a x))
+                  (do (println a) (inc count))
+                  count))
+              1
+              (range 2 x)))))
+
