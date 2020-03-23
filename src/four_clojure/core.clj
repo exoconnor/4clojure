@@ -221,4 +221,18 @@
                         (recur cs primeq)))))]
       (take n (primes)))))
 
+;; Write a function which takes a function f and a variable number of maps. Your
+;; function should return a map that consists of the rest of the maps conj-ed
+;; onto the first. If a key occurs in more than one map, the mapping(s) from the
+;; latter (left-to-right) should be combined with the mapping in the result by
+;; calling (f val-in-result val-in-latter)
+(def p69
+  (fn [f & ms]
+    (reduce (fn merge-entry [result [k v-latter]]
+              (let [v-result (get result k)]
+                (if (nil? v-result)
+                  (assoc result k v-latter)
+                  (assoc result k (f v-result v-latter)))))
+            {}
+            (mapcat seq ms))))
 
