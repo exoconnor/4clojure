@@ -276,7 +276,7 @@
                   (recur b (rem a b))))]
       (reduce (fn [count a]
                 (if (= 1 (gcd a x))
-                  (do (println a) (inc count))
+                  (inc count)
                   count))
               1
               (range 2 x)))))
