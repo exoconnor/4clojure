@@ -297,3 +297,14 @@
                      (conj outset (set words))
                      outset))
                  #{}))))
+
+;; Reimplement trampoline
+;; "Takes a function f and variable parameters, calls f with any
+;; parameters that were supplied. If f returns a function, call with no
+;; args, repeat until f not a function."
+(def p78
+  (fn [f & args]
+    (let [bounce
+          (fn bounce [b]
+            (if (fn? b) (recur (b)) b))]
+          (bounce (apply f args)))))
