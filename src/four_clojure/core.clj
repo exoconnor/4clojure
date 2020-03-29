@@ -1,6 +1,4 @@
 (ns four-clojure.core)
-(require '[taoensso.tufte :as tufte :refer (defnp p profiled profile)])
-(tufte/add-basic-println-handler! {})
 
 ;; Write a function which reverses the interleave process into x number of subsequences.
 (def p43
@@ -308,3 +306,16 @@
           (fn bounce [b]
             (if (fn? b) (recur (b)) b))]
           (bounce (apply f args)))))
+
+;; Write a function which calculates the sum of the minimal path through a
+;; triangle. The triangle is represented as a collection of vectors. The path
+;; should start at the top of the triangle and move to an adjacent number on the
+;; next row until the bottom of the triangle is reached.
+(def p79
+  (fn tmp [triangle]
+    (apply min
+           (reduce (fn [path-sums row]
+                     (map (fn [[]]
+                            ())))))
+    (let [min-path-sum (fn [head])]
+     )))

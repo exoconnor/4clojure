@@ -1,14 +1,11 @@
 # four-clojure
 
-A Clojure library designed to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+Collection repository for 4clojure problems, along with anything I write while
+reading Brave Clojure, although truth be told I delete most of that.
 
 ## License
 
-Copyright © 2020 FIXME
+Copyright © 2020
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
